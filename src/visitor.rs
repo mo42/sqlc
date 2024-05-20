@@ -113,7 +113,7 @@ impl Visitor for SqlVisitor {
     fn visit_expression(&mut self, expression: &Expr) -> Vec<String> {
         match expression {
             Expr::BinaryOp { left, op, right } => {
-                // For now, directly translate to C expression
+                // TODO For now, directly translate to C expression
                 let mut r = vec!["(".to_string()];
                 r.extend(self.visit_expression(left));
                 r.push(self.visit_operator(op));
@@ -122,10 +122,18 @@ impl Visitor for SqlVisitor {
                 return r;
             }
             Expr::Identifier(ident) => {
-                return [self.visit_ident(&ident).unwrap().clone()].to_vec();
+                // TODO For now, directly translate to C expression
+                let mut r: String = "table.".to_string();
+                r.push_str(&self.visit_ident(&ident).unwrap().clone());
+                r.push_str("[i]");
+                return [r].to_vec();
             }
             Expr::Value(val) => {
-                return [self.visit_value(&val)].to_vec();
+                // TODO support real types instead of only strings
+                let mut r: String = "\"".to_string();
+                r.push_str(&self.visit_value(&val));
+                r.push_str("\"");
+                return [r].to_vec();
             }
             _ => [].to_vec(),
         }

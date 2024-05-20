@@ -59,6 +59,19 @@ fn query_sequence(from: &String, selection: &Vec<String>, filter: &Vec<String>) 
     println!("}}");
     println!("");
 
+    println!("base filter(base table) {{");
+    println!("  base out;");
+    println!("  for (std::size_t i = 0; i != table.ca.size(); ++i) {{");
+    println!("    if ({filter}) {{", filter=filter.join(" "));
+    for column_name in column_names.iter() {
+        println!("      out.{column_name}.push_back(table.ca[i]);");
+    }
+    println!("    }}");
+    println!("  }}");
+    println!("return out;");
+    println!("}}");
+    println!("");
+
     println!("struct projected {{");
     println!("  std::vector<std::string> _columns = {{");
     for column_name in selection.iter() {
@@ -87,7 +100,7 @@ fn query_sequence(from: &String, selection: &Vec<String>, filter: &Vec<String>) 
     println!("");
 
     println!("int main() {{");
-    println!("  projected table = project(load_base());");
+    println!("  projected table = project(filter(load_base()));");
     println!("  return 0;");
     println!("}}");
 }
@@ -105,6 +118,5 @@ fn main() {
     for statement in ast {
         traverse_ast(&mut visitor, &statement);
     }
-    dbg!("{:?}", &visitor.filter);
     query_sequence(&visitor.from.unwrap(), &visitor.selection, &visitor.filter);
 }
