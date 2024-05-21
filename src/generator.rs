@@ -2,7 +2,6 @@ use csv::Reader;
 use std::error::Error;
 use std::fs::File;
 
-
 fn get_column_names(filename: &String) -> Result<Vec<String>, Box<dyn Error>> {
     let file = File::open(filename)?;
     let mut reader = Reader::from_reader(file);
@@ -56,7 +55,7 @@ pub fn generate_code(from: &String, selection: &Vec<String>, filter: &Vec<String
     println!("base filter(base table) {{");
     println!("  base out;");
     println!("  for (std::size_t i = 0; i != table.ca.size(); ++i) {{");
-    println!("    if ({filter}) {{", filter=filter.join(" "));
+    println!("    if ({filter}) {{", filter = filter.join(" "));
     for column_name in column_names.iter() {
         println!("      out.{column_name}.push_back(table.ca[i]);");
     }

@@ -169,4 +169,3 @@ impl Visitor for SqlVisitor {
 pub fn traverse_ast(visitor: &mut dyn Visitor, statement: &Statement) {
     visitor.visit_statement(statement);
 }
-
