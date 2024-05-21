@@ -3,15 +3,11 @@ use sqlparser::dialect::GenericDialect;
 use sqlparser::parser::Parser;
 
 mod visitor;
-use crate::visitor::{SqlVisitor, Visitor};
+use crate::visitor::{SqlVisitor, traverse_ast};
 
 mod generator;
 use crate::generator::generate_code;
 
-
-fn traverse_ast(visitor: &mut dyn Visitor, statement: &Statement) {
-    visitor.visit_statement(statement);
-}
 
 fn main() {
     let sql = "SELECT cc FROM 'ta.csv' WHERE cb = 1 AND ca = 2";
