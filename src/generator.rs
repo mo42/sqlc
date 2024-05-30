@@ -1,6 +1,12 @@
 use csv::Reader;
 use std::error::Error;
 use std::fs::File;
+use std::collections::HashMap;
+
+pub struct Schema {
+    pub index_type: String,
+    pub col_types: HashMap<String, String>,
+}
 
 fn get_column_names(filename: &String) -> Result<Vec<String>, Box<dyn Error>> {
     let file = File::open(filename)?;
@@ -12,88 +18,25 @@ fn get_column_names(filename: &String) -> Result<Vec<String>, Box<dyn Error>> {
 
 pub fn generate_code(from: &String, selection: &Vec<String>, filter: &Vec<String>) {
     // COLUMN TYPES
-    println!("#include <iostream>\n#include <vector>\n#include \"rapidcsv.h\"\n");
+    println!("#include <DataFrame/DataFrame.h>\n\n#include <iostream>");
+    println!("using namespace hmdf;");
     // TODO analyse source file here to determine all types
-    let Ok(column_names) = get_column_names(&from) else {
-        todo!();
+    let mut col_types = HashMap::new();
+    col_types.insert("ca".to_string(), "double".to_string());
+    col_types.insert("cb".to_string(), "double".to_string());
+    col_types.insert("cc".to_string(), "double".to_string());
+    col_types.insert("cd".to_string(), "double".to_string());
+    col_types.insert("ce".to_string(), "double".to_string());
+    col_types.insert("cf".to_string(), "long".to_string());
+    let schema = Schema {
+        index_type: "std::string".to_string(),
+        col_types: col_types,
     };
-    for column_name in column_names.iter() {
-        println!(
-            "typedef std::string {column_name};",
-            column_name = column_name
-        );
-    }
-    println!("");
-    println!("struct base {{");
-    println!("  std::string _source = \"{from}\";", from = from);
-    println!("  std::vector<std::string> _columns = {{");
-    for column_name in column_names.iter() {
-        println!("    \"{column_name}\",", column_name = column_name);
-    }
-    println!("  }};");
-    for column_name in column_names.iter() {
-        println!(
-            "  std::vector<std::string> {column_name};",
-            column_name = column_name
-        );
-    }
-    println!("}};");
-    println!("");
-    println!("base load_base() {{");
-    println!("  base table;");
-    println!("  rapidcsv::Document doc(table._source);");
-    for column_name in column_names.iter() {
-        println!(
-            "  table.{column_name} = doc.GetColumn<std::string>(\"{column_name}\");",
-            column_name = column_name
-        );
-    }
-    println!("  return table;");
-    println!("}}");
-    println!("");
-
-    println!("base filter(base table) {{");
-    println!("  base out;");
-    println!("  for (std::size_t i = 0; i != table.ca.size(); ++i) {{");
-    println!("    if ({filter}) {{", filter = filter.join(" "));
-    for column_name in column_names.iter() {
-        println!("      out.{column_name}.push_back(table.ca[i]);");
-    }
-    println!("    }}");
-    println!("  }}");
-    println!("return out;");
-    println!("}}");
-    println!("");
-
-    println!("struct projected {{");
-    println!("  std::vector<std::string> _columns = {{");
-    for column_name in selection.iter() {
-        println!("    \"{column_name}\",", column_name = column_name);
-    }
-    println!("  }};");
-    for column_name in selection.iter() {
-        println!(
-            "  std::vector<std::string> {column_name};",
-            column_name = column_name
-        );
-    }
-    println!("}};");
-    println!("");
-
-    println!("projected project(base table) {{");
-    println!("  projected result;");
-    for column_name in selection.iter() {
-        println!(
-            "  result.{column_name} = table.{column_name};",
-            column_name = column_name
-        );
-    }
-    println!("  return result;");
-    println!("}}");
-    println!("");
-
-    println!("int main() {{");
-    println!("  projected table = project(filter(load_base()));");
+    println!("typedef {idx_t} idx_t;", idx_t=schema.index_type);
+    println!("using SqlcDataFrame = StdDataFrame<idx_t>;");
+    println!("int main(int, char**) {{");
+    println!("  SqlcDataFrame df;");
+    println!("  df.read(\"{file_name}\", io_format::csv2);", file_name=from);
     println!("  return 0;");
     println!("}}");
 }
