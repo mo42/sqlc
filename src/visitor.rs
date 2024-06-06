@@ -1,4 +1,5 @@
 use sqlparser::ast::*;
+use std::collections::HashSet;
 
 pub trait Visitor {
     fn visit_statement(&mut self, statement: &Statement);
@@ -20,6 +21,7 @@ pub struct SqlVisitor {
     pub from: Option<String>,
     pub selection: Vec<String>,
     pub filter: Vec<String>,
+    pub filter_cols: HashSet<String>,
 }
 
 impl SqlVisitor {
@@ -28,6 +30,7 @@ impl SqlVisitor {
             from: None,
             selection: Vec::new(),
             filter: Vec::new(),
+            filter_cols: HashSet::new(),
         }
     }
 }
@@ -123,16 +126,12 @@ impl Visitor for SqlVisitor {
             }
             Expr::Identifier(ident) => {
                 // TODO For now, directly translate to C expression
-                let mut r: String = "table.".to_string();
-                r.push_str(&self.visit_ident(&ident).unwrap().clone());
-                r.push_str("[i]");
-                return [r].to_vec();
+                let id = self.visit_ident(&ident).unwrap();
+                self.filter_cols.insert(id.clone());
+                return [id.clone()].to_vec();
             }
             Expr::Value(val) => {
-                // TODO support real types instead of only strings
-                let mut r: String = "\"".to_string();
-                r.push_str(&self.visit_value(&val));
-                r.push_str("\"");
+                let r: String = self.visit_value(&val).to_string();
                 return [r].to_vec();
             }
             _ => [].to_vec(),
