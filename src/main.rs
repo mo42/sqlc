@@ -1,4 +1,3 @@
-use sqlparser::ast::Statement;
 use sqlparser::dialect::GenericDialect;
 use sqlparser::parser::Parser;
 
@@ -27,7 +26,12 @@ fn main() {
                 for statement in ast {
                     traverse_ast(&mut visitor, &statement);
                 }
-                generate_code(&visitor.from.unwrap(), &visitor.selection, &visitor.filter, &visitor.filter_cols);
+                generate_code(
+                    &visitor.from.unwrap(),
+                    &visitor.selection,
+                    &visitor.filter,
+                    &visitor.filter_cols,
+                );
             }
             Err(error) => {
                 eprintln!("Error reading file {}: {}", &args[1], error);
