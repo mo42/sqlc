@@ -151,15 +151,21 @@ impl Visitor for SqlVisitor {
 
     fn visit_operator(&mut self, op: &BinaryOperator) -> String {
         match op {
-            BinaryOperator::Eq => {
-                return "==".to_string();
-            }
-            BinaryOperator::And => {
-                return "&&".to_string();
-            }
+            BinaryOperator::Plus => "+".to_string(),
+            BinaryOperator::Minus => "-".to_string(),
+            BinaryOperator::Multiply => "*".to_string(),
+            BinaryOperator::Divide => "/".to_string(),
+            BinaryOperator::Modulo => "%".to_string(),
+            BinaryOperator::Gt => ">".to_string(),
+            BinaryOperator::Lt => "<".to_string(),
+            BinaryOperator::GtEq => ">=".to_string(),
+            BinaryOperator::LtEq => "<=".to_string(),
+            BinaryOperator::Eq => "=".to_string(),
+            BinaryOperator::NotEq => "!+".to_string(),
+            BinaryOperator::And => "&&".to_string(),
+            BinaryOperator::Or => "||".to_string(),
             _ => {
                 todo!();
-                return String::new();
             }
         }
     }
