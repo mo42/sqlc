@@ -20,9 +20,10 @@ fn read_csv_columns(file_path: &str) -> Result<HashMap<String, String>> {
             c.split(':').nth(0).unwrap().to_string(),
             c.split(':')
                 .nth(2)
-                .unwrap_or("std::string")
+                .unwrap_or("string")
                 .replace("<", "")
-                .replace(">", ""),
+                .replace(">", "")
+                .replace("string", "std::string"),
         );
     }
     Ok(col_types)
