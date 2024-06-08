@@ -1,19 +1,31 @@
-use csv::Reader;
 use std::collections::{HashMap, HashSet};
-use std::error::Error;
 use std::fs::File;
+use std::io::Result;
+
+use csv::Reader;
 
 pub struct Schema {
     pub index_type: String,
     pub col_types: HashMap<String, String>,
 }
 
-fn get_column_names(filename: &String) -> Result<Vec<String>, Box<dyn Error>> {
-    let file = File::open(filename)?;
-    let mut reader = Reader::from_reader(file);
-    let headers = reader.headers()?.clone();
-    let column_names = headers.iter().map(|s| s.to_string()).collect();
-    Ok(column_names)
+fn read_csv_columns(file_path: &str) -> Result<HashMap<String, String>> {
+    let file = File::open(file_path)?;
+    let mut rdr = Reader::from_reader(file);
+    let hdrs = rdr.headers()?.clone();
+    let columns: Vec<_> = hdrs.iter().map(|s| s.to_string()).collect();
+    let mut col_types: HashMap<String, String> = HashMap::new();
+    for c in columns.iter() {
+        col_types.insert(
+            c.split(':').nth(0).unwrap().to_string(),
+            c.split(':')
+                .nth(2)
+                .unwrap_or("std::string")
+                .replace("<", "")
+                .replace(">", ""),
+        );
+    }
+    Ok(col_types)
 }
 
 pub fn generate_code(
@@ -25,10 +37,7 @@ pub fn generate_code(
     println!("#include <DataFrame/DataFrame.h>\n\n#include <iostream>");
     println!("using namespace hmdf;");
     // TODO analyse source file here to determine all types
-    let mut col_types = HashMap::new();
-    col_types.insert("ca".to_string(), "double".to_string());
-    col_types.insert("cb".to_string(), "double".to_string());
-    col_types.insert("cc".to_string(), "int".to_string());
+    let col_types = read_csv_columns(&from).unwrap();
     let schema = Schema {
         index_type: "std::string".to_string(),
         col_types: col_types,
