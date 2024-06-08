@@ -1,4 +1,4 @@
-INDEX:10:<ulong>,date:10:<string>,column1:10:<double>,column2:10:<int>,column3:10:<long>,column4:10:<std::string>
+INDEX:10:<ulong>,date:10:<string>,column1:10:<double>,column2:10:<int>,column3:10:<long>,column4:10:<string>
 0,2024-06-08,2.1,2,1089200,string0
 1,2024-06-07,3.1,2,1173500,string1
 2,2024-06-06,4.1,2,5208100,string2
