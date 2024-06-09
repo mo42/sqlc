@@ -160,7 +160,7 @@ impl Visitor for SqlVisitor {
             BinaryOperator::Lt => "<".to_string(),
             BinaryOperator::GtEq => ">=".to_string(),
             BinaryOperator::LtEq => "<=".to_string(),
-            BinaryOperator::Eq => "=".to_string(),
+            BinaryOperator::Eq => "==".to_string(),
             BinaryOperator::NotEq => "!+".to_string(),
             BinaryOperator::And => "&&".to_string(),
             BinaryOperator::Or => "||".to_string(),
