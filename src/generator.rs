@@ -37,10 +37,10 @@ pub fn generate_code(
 ) {
     println!("#include <DataFrame/DataFrame.h>\n\n#include <iostream>");
     println!("using namespace hmdf;");
-    // TODO analyse source file here to determine all types
     let col_types = read_csv_columns(&from).unwrap();
+    let idx_type = col_types.get("INDEX").unwrap().to_string();
     let schema = Schema {
-        index_type: "std::string".to_string(),
+        index_type: idx_type,
         col_types: col_types,
     };
     println!("typedef {idx_t} idx_t;", idx_t = schema.index_type);
