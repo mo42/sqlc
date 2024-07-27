@@ -1,58 +1,22 @@
-use crate::intermediate::IntRep;
-use std::collections::{HashMap, HashSet};
-use std::fs::File;
-use std::io::Result;
+use crate::intermediate::IntRepSchema;
+use std::collections::HashSet;
 
-use csv::Reader;
-
-pub struct Schema {
-    pub index_type: String,
-    pub col_types: HashMap<String, String>,
-}
-
-fn read_csv_columns(file_path: &str) -> Result<HashMap<String, String>> {
-    let file = File::open(file_path)?;
-    let mut rdr = Reader::from_reader(file);
-    let hdrs = rdr.headers()?.clone();
-    let columns: Vec<_> = hdrs.iter().map(|s| s.to_string()).collect();
-    let mut col_types: HashMap<String, String> = HashMap::new();
-    for c in columns.iter() {
-        col_types.insert(
-            c.split(':').nth(0).unwrap().to_string(),
-            c.split(':')
-                .nth(2)
-                .unwrap_or("string")
-                .replace("<", "")
-                .replace(">", "")
-                .replace("string", "std::string"),
-        );
-    }
-    Ok(col_types)
-}
-
-pub fn generate_code(ir: &IntRep) {
+pub fn generate_code(ir: &IntRepSchema) {
     println!("#include <DataFrame/DataFrame.h>\n\n#include <iostream>");
     println!("using namespace hmdf;");
-    let from = &ir.from.clone().unwrap();
-    let col_types = read_csv_columns(from).unwrap();
-    let idx_type = col_types.get("INDEX").unwrap().to_string();
-    let schema = Schema {
-        index_type: idx_type,
-        col_types: col_types,
-    };
-    println!("typedef {idx_t} idx_t;", idx_t = schema.index_type);
+    println!("typedef {idx_t} idx_t;", idx_t = ir.index_type);
     println!("using SqlcDataFrame = StdDataFrame<idx_t>;");
     println!("int main(int, char**) {{");
     println!("  SqlcDataFrame df;");
     println!(
         "  df.read(\"{file_name}\", io_format::csv2);",
-        file_name = from
+        file_name = ir.from
     );
     print!("  auto where_functor = [](const idx_t&");
     for col in ir.filter_cols.iter() {
         print!(
             ", const {col_t} &{col}",
-            col_t = schema.col_types.get(col).unwrap(),
+            col_t = ir.col_types.get(col).unwrap(),
             col = col
         );
     }
@@ -66,10 +30,10 @@ pub fn generate_code(ir: &IntRep) {
     println!("  auto where_df =");
     print!("    df.get_data_by_sel<");
     for col in ir.filter_cols.iter() {
-        print!("{col_t}, ", col_t = schema.col_types.get(col).unwrap());
+        print!("{col_t}, ", col_t = ir.col_types.get(col).unwrap());
     }
     print!("decltype(where_functor)");
-    let distinct_col_types: HashSet<_> = schema.col_types.values().cloned().collect();
+    let distinct_col_types: HashSet<_> = ir.col_types.values().cloned().collect();
     for col_type in distinct_col_types {
         print!(", {col_t}", col_t = col_type);
     }
@@ -82,7 +46,7 @@ pub fn generate_code(ir: &IntRep) {
     for col in ir.selection.iter() {
         println!(
             "  std::vector<{col_t}> {col} = where_df.get_column<{col_t}> (\"{col}\");",
-            col_t = schema.col_types.get(col).unwrap(),
+            col_t = ir.col_types.get(col).unwrap(),
             col = col
         );
     }

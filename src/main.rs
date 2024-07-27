@@ -5,6 +5,7 @@ mod visitor;
 use crate::visitor::{traverse_ast, SqlVisitor};
 
 mod intermediate;
+use crate::intermediate::IntRepSchema;
 
 mod generator;
 use crate::generator::generate_code;
@@ -28,7 +29,8 @@ fn main() {
                 for statement in ast {
                     traverse_ast(&mut visitor, &statement);
                 }
-                generate_code(&visitor.ir);
+                let irs = IntRepSchema::new(visitor.ir);
+                generate_code(&irs);
             }
             Err(error) => {
                 eprintln!("Error reading file {}: {}", &args[1], error);
