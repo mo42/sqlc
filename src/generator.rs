@@ -1,3 +1,4 @@
+use crate::intermediate::IntRep;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Result;
@@ -29,15 +30,11 @@ fn read_csv_columns(file_path: &str) -> Result<HashMap<String, String>> {
     Ok(col_types)
 }
 
-pub fn generate_code(
-    from: &String,
-    selection: &Vec<String>,
-    filter: &Vec<String>,
-    filter_cols: &HashSet<String>,
-) {
+pub fn generate_code(ir: &IntRep) {
     println!("#include <DataFrame/DataFrame.h>\n\n#include <iostream>");
     println!("using namespace hmdf;");
-    let col_types = read_csv_columns(&from).unwrap();
+    let from = &ir.from.clone().unwrap();
+    let col_types = read_csv_columns(from).unwrap();
     let idx_type = col_types.get("INDEX").unwrap().to_string();
     let schema = Schema {
         index_type: idx_type,
@@ -52,7 +49,7 @@ pub fn generate_code(
         file_name = from
     );
     print!("  auto where_functor = [](const idx_t&");
-    for col in filter_cols.iter() {
+    for col in ir.filter_cols.iter() {
         print!(
             ", const {col_t} &{col}",
             col_t = schema.col_types.get(col).unwrap(),
@@ -61,14 +58,14 @@ pub fn generate_code(
     }
     println!(") -> bool {{");
     print!("    return ");
-    for filter_token in filter.iter() {
+    for filter_token in ir.filter.iter() {
         print!("{filter_token}", filter_token = filter_token);
     }
     println!(";");
     println!("  }};");
     println!("  auto where_df =");
     print!("    df.get_data_by_sel<");
-    for col in filter_cols.iter() {
+    for col in ir.filter_cols.iter() {
         print!("{col_t}, ", col_t = schema.col_types.get(col).unwrap());
     }
     print!("decltype(where_functor)");
@@ -77,12 +74,12 @@ pub fn generate_code(
         print!(", {col_t}", col_t = col_type);
     }
     print!(">(");
-    for col in filter_cols.iter() {
+    for col in ir.filter_cols.iter() {
         print!("\"{col}\", ", col = col);
     }
     println!("where_functor);");
     println!("  std::vector<idx_t> idx = where_df.get_index();");
-    for col in selection.iter() {
+    for col in ir.selection.iter() {
         println!(
             "  std::vector<{col_t}> {col} = where_df.get_column<{col_t}> (\"{col}\");",
             col_t = schema.col_types.get(col).unwrap(),
@@ -91,7 +88,7 @@ pub fn generate_code(
     }
     println!("  SqlcDataFrame select;");
     println!("  select.load_index(std::move(idx));");
-    for col in selection.iter() {
+    for col in ir.selection.iter() {
         println!(
             "  select.load_column(\"{col}\", std::move({col}));",
             col = col
