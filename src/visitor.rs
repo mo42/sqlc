@@ -1,5 +1,5 @@
+use crate::intermediate::IntRep;
 use sqlparser::ast::*;
-use std::collections::HashSet;
 
 pub trait Visitor {
     fn visit_statement(&mut self, statement: &Statement);
@@ -18,20 +18,12 @@ pub trait Visitor {
 }
 
 pub struct SqlVisitor {
-    pub from: Option<String>,
-    pub selection: Vec<String>,
-    pub filter: Vec<String>,
-    pub filter_cols: HashSet<String>,
+    pub ir: IntRep,
 }
 
 impl SqlVisitor {
     pub fn new() -> Self {
-        SqlVisitor {
-            from: None,
-            selection: Vec::new(),
-            filter: Vec::new(),
-            filter_cols: HashSet::new(),
-        }
+        SqlVisitor { ir: IntRep::new() }
     }
 }
 
@@ -65,7 +57,7 @@ impl Visitor for SqlVisitor {
         }
         match &select.selection {
             Some(selection) => {
-                self.filter = self.visit_expression(&selection);
+                self.ir.filter = self.visit_expression(&selection);
             }
             None => {}
         }
@@ -84,7 +76,7 @@ impl Visitor for SqlVisitor {
         match expr {
             Expr::Identifier(ident) => {
                 let col = self.visit_ident(&ident).unwrap().clone();
-                self.selection.push(col);
+                self.ir.selection.push(col);
             }
             _ => {}
         }
@@ -105,7 +97,7 @@ impl Visitor for SqlVisitor {
 
     fn visit_object_name(&mut self, object_name: &ObjectName) {
         for ident in object_name.0.iter() {
-            self.from = self.visit_ident(&ident);
+            self.ir.from = self.visit_ident(&ident);
         }
     }
 
@@ -127,7 +119,7 @@ impl Visitor for SqlVisitor {
             Expr::Identifier(ident) => {
                 // TODO For now, directly translate to C expression
                 let id = self.visit_ident(&ident).unwrap();
-                self.filter_cols.insert(id.clone());
+                self.ir.filter_cols.insert(id.clone());
                 return [id.clone()].to_vec();
             }
             Expr::Value(val) => {
