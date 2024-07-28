@@ -8,8 +8,11 @@ pub trait Visitor {
     fn visit_select_item(&mut self, select_item: &SelectItem);
     fn visit_table_with_joins(&mut self, table_with_joins: &TableWithJoins);
     fn visit_expr(&mut self, expr: &Expr);
-    fn visit_relation(&mut self, relation: &TableFactor);
-    fn visit_object_name(&mut self, object_name: &ObjectName);
+    fn visit_relation(&mut self, relation: &TableFactor) -> Option<String>;
+    fn visit_join(&mut self, join: &Join) -> (String, String, String);
+    fn visit_join_operator(&mut self, join_operator: &JoinOperator) -> Option<(String, String)>;
+    fn visit_join_constraint(&mut self, join_constraint: &JoinConstraint) -> Option<String>;
+    fn visit_object_name(&mut self, object_name: &ObjectName) -> Option<String>;
     fn visit_ident(&mut self, ident: &Ident) -> Option<String>;
     fn visit_value(&mut self, value: &Value) -> String;
     fn visit_query(&mut self, query: &Query);
@@ -83,22 +86,53 @@ impl Visitor for SqlVisitor {
     }
 
     fn visit_table_with_joins(&mut self, table_with_joins: &TableWithJoins) {
-        self.visit_relation(&table_with_joins.relation);
+        self.ir.from = self.visit_relation(&table_with_joins.relation);
+        for join in table_with_joins.joins.iter() {
+            let j = self.visit_join(&join);
+            self.ir.joins.push(j);
+        }
     }
 
-    fn visit_relation(&mut self, relation: &TableFactor) {
+    fn visit_relation(&mut self, relation: &TableFactor) -> Option<String> {
         match relation {
             TableFactor::Table { name, .. } => {
-                self.visit_object_name(&name);
+                return self.visit_object_name(&name);
             }
-            _ => {}
+            _ => None,
         }
     }
 
-    fn visit_object_name(&mut self, object_name: &ObjectName) {
-        for ident in object_name.0.iter() {
-            self.ir.from = self.visit_ident(&ident);
+    fn visit_join(&mut self, join: &Join) -> (String, String, String) {
+        let join_table = self.visit_relation(&join.relation).unwrap();
+        let (join_operator, constraint) = self.visit_join_operator(&join.join_operator).unwrap();
+        return (join_table, join_operator, constraint);
+    }
+
+    fn visit_join_operator(&mut self, join_operator: &JoinOperator) -> Option<(String, String)> {
+        match &join_operator {
+            JoinOperator::Inner(join_constraint) => {
+                let js = self.visit_join_constraint(&join_constraint).unwrap();
+                return Some(("inner".to_string(), js));
+            }
+            _ => None,
         }
+    }
+
+    fn visit_join_constraint(&mut self, join_constraint: &JoinConstraint) -> Option<String> {
+        match &join_constraint {
+            JoinConstraint::Using(lst) => {
+                // Currently DataFrame only allows joins with one columns
+                return self.visit_ident(&lst.first().unwrap());
+            }
+            _ => None,
+        }
+    }
+
+    fn visit_object_name(&mut self, object_name: &ObjectName) -> Option<String> {
+        for ident in object_name.0.iter() {
+            return self.visit_ident(&ident);
+        }
+        None
     }
 
     fn visit_ident(&mut self, ident: &Ident) -> Option<String> {
