@@ -30,6 +30,7 @@ pub struct IntRep {
     pub selection: Vec<String>,
     pub filter: Vec<String>,
     pub filter_cols: HashSet<String>,
+    pub joins: Vec<(String, String, String)>,
 }
 
 impl IntRep {
@@ -39,6 +40,7 @@ impl IntRep {
             selection: Vec::new(),
             filter: Vec::new(),
             filter_cols: HashSet::new(),
+            joins: Vec::new(),
         }
     }
 }
