@@ -1,4 +1,4 @@
-INDEX:10:<int>,column2:10:<int>,joined_string:10:<string>
+INDEX:10:<ulong>,column2:10:<int>,joined_string:10:<string>
 0,0,Join string 0
 1,1,Join string 1
 2,2,Join string 2
