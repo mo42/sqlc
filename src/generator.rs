@@ -7,11 +7,31 @@ pub fn generate_code(ir: &IntRepSchema) {
     println!("typedef {idx_t} idx_t;", idx_t = ir.index_type);
     println!("using SqlcDataFrame = StdDataFrame<idx_t>;");
     println!("int main(int, char**) {{");
-    println!("  SqlcDataFrame df;");
+    println!("  SqlcDataFrame df_main;");
     println!(
-        "  df.read(\"{file_name}\", io_format::csv2);",
+        "  df_main.read(\"{file_name}\", io_format::csv2);",
         file_name = ir.from
     );
+    for (i, (source, _, _)) in ir.joins.iter().enumerate() {
+        println!("  SqlcDataFrame df_join{i};", i = i);
+        println!(
+            "  df_join{i}.read(\"{file_name}\", io_format::csv2);",
+            i = i,
+            file_name = source
+        );
+    }
+    print!("  SqlcDataFrame df = df_main");
+    let distinct_col_types: HashSet<_> = ir.col_types.values().cloned().collect();
+    for (i, (_, join_policy, col)) in ir.joins.iter().enumerate() {
+        println!(".join_by_column");
+        println!("    <");
+        println!("      decltype(df_join{i}),", i = i);
+        print!("      {t}", t = ir.col_types.get(col).unwrap());
+        for col_type in &distinct_col_types {
+            print!(",\n      {col_type}");
+        }
+        println!("\n    >(df_join{i}, \"{col}\", hmdf::join_policy::{join_policy}_join);");
+    }
     print!("  auto where_functor = [](const idx_t&");
     for col in ir.filter_cols.iter() {
         print!(
@@ -33,7 +53,6 @@ pub fn generate_code(ir: &IntRepSchema) {
         print!("{col_t}, ", col_t = ir.col_types.get(col).unwrap());
     }
     print!("decltype(where_functor)");
-    let distinct_col_types: HashSet<_> = ir.col_types.values().cloned().collect();
     for col_type in distinct_col_types {
         print!(", {col_t}", col_t = col_type);
     }
