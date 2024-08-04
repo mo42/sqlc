@@ -151,10 +151,15 @@ impl Visitor for SqlVisitor {
                 return r;
             }
             Expr::Identifier(ident) => {
-                // TODO For now, directly translate to C expression
                 let id = self.visit_ident(&ident).unwrap();
-                self.ir.filter_cols.insert(id.clone());
-                return [id.clone()].to_vec();
+                // TODO For now, directly translate to C expression
+                if let Some(_) = ident.quote_style {
+                    let quoted = format!("\"{}\"", id);
+                    return [quoted].to_vec();
+                } else {
+                    self.ir.filter_cols.insert(id.clone());
+                    return [id.clone()].to_vec();
+                }
             }
             Expr::Value(val) => {
                 let r: String = self.visit_value(&val).to_string();
