@@ -58,7 +58,10 @@ pub struct IntRepSchema {
 impl IntRepSchema {
     pub fn new(ir: IntRep) -> Self {
         let from = &ir.from.clone().unwrap();
-        let col_types = read_csv_columns(from).unwrap();
+        let mut col_types = read_csv_columns(from).unwrap();
+        for (source, _, _) in &ir.joins {
+            col_types.extend(read_csv_columns(source).unwrap());
+        }
         let idx_type = col_types.get("INDEX").unwrap().to_string();
         IntRepSchema {
             from: from.to_string(),
