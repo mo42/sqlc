@@ -50,6 +50,7 @@ pub struct IntRepSchema {
     pub selection: Vec<String>,
     pub filter: Vec<String>,
     pub filter_cols: HashSet<String>,
+    pub joins: Vec<(String, String, String)>,
     pub index_type: String,
     pub col_types: HashMap<String, String>,
 }
@@ -64,6 +65,7 @@ impl IntRepSchema {
             selection: ir.selection,
             filter: ir.filter,
             filter_cols: ir.filter_cols,
+            joins: ir.joins,
             index_type: idx_type,
             col_types: col_types,
         }
