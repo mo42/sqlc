@@ -83,7 +83,7 @@ pub fn generate_code(ir: &IntRepSchema) {
         distinct_select_col_t.insert(ir.col_types.get(col).unwrap().to_string());
     }
     for col_t in distinct_select_col_t.iter() {
-        print!(" ,{col_t}");
+        print!(", {col_t}");
     }
     println!(">(std::cout, hmdf::io_format::csv, 5, false, 100);");
     println!("  return 0;");
