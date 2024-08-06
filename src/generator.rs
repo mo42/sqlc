@@ -77,10 +77,7 @@ pub fn generate_code(ir: &IntRepSchema) {
             col = col
         );
     }
-    println!("  std::cout << select.to_string<double>() << std::endl;");
-
     print!("  select.write<std::ostream");
-
     let mut distinct_select_col_t: HashSet<String> = HashSet::new();
     for col in ir.selection.iter() {
         distinct_select_col_t.insert(ir.col_types.get(col).unwrap().to_string());
