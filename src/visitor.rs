@@ -114,6 +114,14 @@ impl Visitor for SqlVisitor {
                 let js = self.visit_join_constraint(&join_constraint).unwrap();
                 return Some(("inner".to_string(), js));
             }
+            JoinOperator::LeftOuter(join_constraint) => {
+                let js = self.visit_join_constraint(&join_constraint).unwrap();
+                return Some(("left".to_string(), js));
+            }
+            JoinOperator::RightOuter(join_constraint) => {
+                let js = self.visit_join_constraint(&join_constraint).unwrap();
+                return Some(("right".to_string(), js));
+            }
             _ => None,
         }
     }
