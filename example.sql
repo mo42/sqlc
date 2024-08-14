@@ -6,3 +6,4 @@ FROM
   JOIN 'join.csv' USING(column2)
 WHERE
   joined_string = "Join string 3"
+ORDER BY date ASC, column2 DESC

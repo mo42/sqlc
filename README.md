@@ -34,6 +34,7 @@ FROM
   JOIN 'join.csv' USING(column2)
 WHERE
   joined_string = "Join string 3"
+ORDER BY date ASC, column2 DESC
 ```
 
 ```cpp
@@ -48,16 +49,18 @@ int main(int, char**) {
   df_main.read("example.csv", io_format::csv2);
   SqlcDataFrame df_join0;
   df_join0.read("join.csv", io_format::csv2);
-  SqlcDataFrame df = df_main.join_by_column<decltype(df_join0), int, ulong,
-                                            double, int, std::string, long>(
+  SqlcDataFrame df = df_main.join_by_column<decltype(df_join0), int, double,
+                                            std::string, int, long, ulong>(
       df_join0, "column2", hmdf::join_policy::inner_join);
   auto where_functor = [](const idx_t&,
                           const std::string& joined_string) -> bool {
     return (joined_string == "Join string 3");
   };
   auto where_df = df.get_data_by_sel<std::string, decltype(where_functor),
-                                     ulong, double, int, std::string, long>(
+                                     double, std::string, int, long, ulong>(
       "joined_string", where_functor);
+  where_df.sort<std::string, int, double, std::string, int, long, ulong>(
+      "date", sort_spec::ascen, "column2", sort_spec::desce);
   std::vector<idx_t> idx = where_df.get_index();
   std::vector<std::string> date = where_df.get_column<std::string>("date");
   std::vector<int> column2 = where_df.get_column<int>("column2");
@@ -65,7 +68,6 @@ int main(int, char**) {
   select.load_index(std::move(idx));
   select.load_column("date", std::move(date));
   select.load_column("column2", std::move(column2));
-  std::cout << select.to_string<double>() << std::endl;
   select.write<std::ostream, std::string, int>(std::cout, hmdf::io_format::csv,
                                                5, false, 100);
   return 0;
