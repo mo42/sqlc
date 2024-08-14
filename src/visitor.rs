@@ -4,10 +4,11 @@ use sqlparser::ast::*;
 pub trait Visitor {
     fn visit_statement(&mut self, statement: &Statement);
     fn visit_body(&mut self, body: &SetExpr);
+    fn visit_order_by(&mut self, order_by: &OrderByExpr) -> (String, bool);
     fn visit_select(&mut self, select: &Select);
     fn visit_select_item(&mut self, select_item: &SelectItem);
     fn visit_table_with_joins(&mut self, table_with_joins: &TableWithJoins);
-    fn visit_expr(&mut self, expr: &Expr);
+    fn visit_expr(&mut self, expr: &Expr) -> Option<String>;
     fn visit_relation(&mut self, relation: &TableFactor) -> Option<String>;
     fn visit_join(&mut self, join: &Join) -> (String, String, String);
     fn visit_join_operator(&mut self, join_operator: &JoinOperator) -> Option<(String, String)>;
@@ -40,6 +41,10 @@ impl Visitor for SqlVisitor {
 
     fn visit_query(&mut self, query: &Query) {
         self.visit_body(&query.body);
+        for order_by in query.order_by.iter() {
+            let (col, asc) = self.visit_order_by(&order_by);
+            self.ir.order_by.push((col, asc));
+        }
     }
 
     fn visit_body(&mut self, body: &SetExpr) {
@@ -48,6 +53,15 @@ impl Visitor for SqlVisitor {
                 self.visit_select(select);
             }
             _ => {}
+        }
+    }
+
+    fn visit_order_by(&mut self, order_by: &OrderByExpr) -> (String, bool) {
+        let col = self.visit_expr(&order_by.expr).unwrap().clone();
+        if let Some(asc) = order_by.asc {
+            return (col, asc);
+        } else {
+            return (col, true);
         }
     }
 
@@ -69,19 +83,19 @@ impl Visitor for SqlVisitor {
     fn visit_select_item(&mut self, select_item: &SelectItem) {
         match select_item {
             SelectItem::UnnamedExpr(expr) => {
-                self.visit_expr(&expr);
+                let col = self.visit_expr(&expr).unwrap().clone();
+                self.ir.selection.push(col);
             }
             _ => {}
         }
     }
 
-    fn visit_expr(&mut self, expr: &Expr) {
+    fn visit_expr(&mut self, expr: &Expr) -> Option<String> {
         match expr {
             Expr::Identifier(ident) => {
-                let col = self.visit_ident(&ident).unwrap().clone();
-                self.ir.selection.push(col);
+                return self.visit_ident(&ident);
             }
-            _ => {}
+            _ => None,
         }
     }
 

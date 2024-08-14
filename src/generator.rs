@@ -53,7 +53,7 @@ pub fn generate_code(ir: &IntRepSchema) {
         print!("{col_t}, ", col_t = ir.col_types.get(col).unwrap());
     }
     print!("decltype(where_functor)");
-    for col_type in distinct_col_types {
+    for col_type in &distinct_col_types {
         print!(", {col_t}", col_t = col_type);
     }
     print!(">(");
@@ -61,6 +61,37 @@ pub fn generate_code(ir: &IntRepSchema) {
         print!("\"{col}\", ", col = col);
     }
     println!("where_functor);");
+
+    // ORDER BY
+
+    if ir.order_by.len() > 0 {
+        print!("  where_df.sort<");
+        for (ob_col, _) in &ir.order_by {
+            print!("{}, ", ir.col_types.get(ob_col).unwrap());
+        }
+        let col_types = &distinct_col_types
+            .iter()
+            .cloned()
+            .collect::<Vec<String>>()
+            .join(", ");
+        print!("{}", col_types);
+        let order_by = ir
+            .order_by
+            .iter()
+            .map(|(ob_col, inc)| {
+                if *inc {
+                    format!("\"{}\", sort_spec::ascen", ob_col)
+                } else {
+                    format!("\"{}\", sort_spec::desce", ob_col)
+                }
+            })
+            .collect::<Vec<String>>()
+            .join(", ");
+        print!(">({});\n", order_by);
+    }
+
+    // END ORDER BY
+
     println!("  std::vector<idx_t> idx = where_df.get_index();");
     for col in ir.selection.iter() {
         println!(
