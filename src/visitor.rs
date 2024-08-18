@@ -1,4 +1,4 @@
-use crate::intermediate::IntRep;
+use crate::intermediate::{ColumnOrder, IntRep, OrderDirection};
 use sqlparser::ast::*;
 
 pub trait Visitor {
@@ -43,7 +43,14 @@ impl Visitor for SqlVisitor {
         self.visit_body(&query.body);
         for order_by in query.order_by.iter() {
             let (col, asc) = self.visit_order_by(&order_by);
-            self.ir.order_by.push((col, asc));
+            self.ir.order_by.push(ColumnOrder {
+                column: col,
+                direction: if asc {
+                    OrderDirection::Ascending
+                } else {
+                    OrderDirection::Descending
+                },
+            });
         }
     }
 
