@@ -1,4 +1,4 @@
-use crate::intermediate::IntRepSchema;
+use crate::intermediate::{IntRepSchema, OrderDirection};
 use std::collections::HashSet;
 
 pub fn generate_code(ir: &IntRepSchema) {
@@ -66,8 +66,8 @@ pub fn generate_code(ir: &IntRepSchema) {
 
     if ir.order_by.len() > 0 {
         print!("  where_df.sort<");
-        for (ob_col, _) in &ir.order_by {
-            print!("{}, ", ir.col_types.get(ob_col).unwrap());
+        for ob in &ir.order_by {
+            print!("{}, ", ir.col_types.get(&ob.column).unwrap());
         }
         let col_types = &distinct_col_types
             .iter()
@@ -78,12 +78,9 @@ pub fn generate_code(ir: &IntRepSchema) {
         let order_by = ir
             .order_by
             .iter()
-            .map(|(ob_col, inc)| {
-                if *inc {
-                    format!("\"{}\", sort_spec::ascen", ob_col)
-                } else {
-                    format!("\"{}\", sort_spec::desce", ob_col)
-                }
+            .map(|ob| match ob.direction {
+                OrderDirection::Ascending => format!("\"{}\", sort_spec::ascen", ob.column),
+                OrderDirection::Descending => format!("\"{}\", sort_spec::desce", ob.column),
             })
             .collect::<Vec<String>>()
             .join(", ");
