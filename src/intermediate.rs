@@ -25,13 +25,23 @@ fn read_csv_columns(file_path: &str) -> Result<HashMap<String, String>> {
     Ok(col_types)
 }
 
+pub enum OrderDirection {
+    Ascending,
+    Descending,
+}
+
+pub struct ColumnOrder {
+    pub column: String,
+    pub direction: OrderDirection,
+}
+
 pub struct IntRep {
     pub from: Option<String>,
     pub selection: Vec<String>,
     pub filter: Vec<String>,
     pub filter_cols: HashSet<String>,
     pub joins: Vec<(String, String, String)>,
-    pub order_by: Vec<(String, bool)>,
+    pub order_by: Vec<ColumnOrder>,
 }
 
 impl IntRep {
@@ -53,7 +63,7 @@ pub struct IntRepSchema {
     pub filter: Vec<String>,
     pub filter_cols: HashSet<String>,
     pub joins: Vec<(String, String, String)>,
-    pub order_by: Vec<(String, bool)>,
+    pub order_by: Vec<ColumnOrder>,
     pub index_type: String,
     pub col_types: HashMap<String, String>,
 }
