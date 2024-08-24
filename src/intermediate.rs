@@ -35,12 +35,24 @@ pub struct ColumnOrder {
     pub direction: OrderDirection,
 }
 
+pub enum JoinOperator {
+    Inner,
+    Left,
+    Right,
+}
+
+pub struct Join {
+    pub source: String,
+    pub operator: JoinOperator,
+    pub constraint: String,
+}
+
 pub struct IntRep {
     pub from: Option<String>,
     pub selection: Vec<String>,
     pub filter: Vec<String>,
     pub filter_cols: HashSet<String>,
-    pub joins: Vec<(String, String, String)>,
+    pub joins: Vec<Join>,
     pub order_by: Vec<ColumnOrder>,
 }
 
@@ -62,7 +74,7 @@ pub struct IntRepSchema {
     pub selection: Vec<String>,
     pub filter: Vec<String>,
     pub filter_cols: HashSet<String>,
-    pub joins: Vec<(String, String, String)>,
+    pub joins: Vec<Join>,
     pub order_by: Vec<ColumnOrder>,
     pub index_type: String,
     pub col_types: HashMap<String, String>,
@@ -72,8 +84,8 @@ impl IntRepSchema {
     pub fn new(ir: IntRep) -> Self {
         let from = &ir.from.clone().unwrap();
         let mut col_types = read_csv_columns(from).unwrap();
-        for (source, _, _) in &ir.joins {
-            col_types.extend(read_csv_columns(source).unwrap());
+        for join in &ir.joins {
+            col_types.extend(read_csv_columns(&join.source).unwrap());
         }
         let idx_type = col_types.get("INDEX").unwrap().to_string();
         IntRepSchema {
