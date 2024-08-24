@@ -1,4 +1,4 @@
-use crate::intermediate::{ColumnOrder, IntRep, OrderDirection};
+use crate::intermediate as int;
 use sqlparser::ast::*;
 
 pub trait Visitor {
@@ -10,8 +10,11 @@ pub trait Visitor {
     fn visit_table_with_joins(&mut self, table_with_joins: &TableWithJoins);
     fn visit_expr(&mut self, expr: &Expr) -> Option<String>;
     fn visit_relation(&mut self, relation: &TableFactor) -> Option<String>;
-    fn visit_join(&mut self, join: &Join) -> (String, String, String);
-    fn visit_join_operator(&mut self, join_operator: &JoinOperator) -> Option<(String, String)>;
+    fn visit_join(&mut self, join: &Join) -> int::Join;
+    fn visit_join_operator(
+        &mut self,
+        join_operator: &JoinOperator,
+    ) -> Option<(int::JoinOperator, String)>;
     fn visit_join_constraint(&mut self, join_constraint: &JoinConstraint) -> Option<String>;
     fn visit_object_name(&mut self, object_name: &ObjectName) -> Option<String>;
     fn visit_ident(&mut self, ident: &Ident) -> Option<String>;
@@ -22,12 +25,14 @@ pub trait Visitor {
 }
 
 pub struct SqlVisitor {
-    pub ir: IntRep,
+    pub ir: int::IntRep,
 }
 
 impl SqlVisitor {
     pub fn new() -> Self {
-        SqlVisitor { ir: IntRep::new() }
+        SqlVisitor {
+            ir: int::IntRep::new(),
+        }
     }
 }
 
@@ -43,12 +48,12 @@ impl Visitor for SqlVisitor {
         self.visit_body(&query.body);
         for order_by in query.order_by.iter() {
             let (col, asc) = self.visit_order_by(&order_by);
-            self.ir.order_by.push(ColumnOrder {
+            self.ir.order_by.push(int::ColumnOrder {
                 column: col,
                 direction: if asc {
-                    OrderDirection::Ascending
+                    int::OrderDirection::Ascending
                 } else {
-                    OrderDirection::Descending
+                    int::OrderDirection::Descending
                 },
             });
         }
@@ -123,25 +128,32 @@ impl Visitor for SqlVisitor {
         }
     }
 
-    fn visit_join(&mut self, join: &Join) -> (String, String, String) {
+    fn visit_join(&mut self, join: &Join) -> int::Join {
         let join_table = self.visit_relation(&join.relation).unwrap();
-        let (join_operator, constraint) = self.visit_join_operator(&join.join_operator).unwrap();
-        return (join_table, join_operator, constraint);
+        let (operator, constraint) = self.visit_join_operator(&join.join_operator).unwrap();
+        return int::Join {
+            source: join_table,
+            operator: operator,
+            constraint: constraint,
+        };
     }
 
-    fn visit_join_operator(&mut self, join_operator: &JoinOperator) -> Option<(String, String)> {
+    fn visit_join_operator(
+        &mut self,
+        join_operator: &JoinOperator,
+    ) -> Option<(int::JoinOperator, String)> {
         match &join_operator {
             JoinOperator::Inner(join_constraint) => {
                 let js = self.visit_join_constraint(&join_constraint).unwrap();
-                return Some(("inner".to_string(), js));
+                return Some((int::JoinOperator::Inner, js));
             }
             JoinOperator::LeftOuter(join_constraint) => {
                 let js = self.visit_join_constraint(&join_constraint).unwrap();
-                return Some(("left".to_string(), js));
+                return Some((int::JoinOperator::Left, js));
             }
             JoinOperator::RightOuter(join_constraint) => {
                 let js = self.visit_join_constraint(&join_constraint).unwrap();
-                return Some(("right".to_string(), js));
+                return Some((int::JoinOperator::Right, js));
             }
             _ => None,
         }

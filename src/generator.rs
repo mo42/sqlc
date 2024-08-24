@@ -1,5 +1,17 @@
-use crate::intermediate::{IntRepSchema, OrderDirection};
+use crate::intermediate::*;
+use core::fmt;
 use std::collections::HashSet;
+
+impl fmt::Display for JoinOperator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let jop = match self {
+            JoinOperator::Inner => "inner_join",
+            JoinOperator::Left => "left_join",
+            JoinOperator::Right => "right_join",
+        };
+        write!(f, "{}", jop)
+    }
+}
 
 pub fn generate_code(ir: &IntRepSchema) {
     println!("#include <DataFrame/DataFrame.h>\n\n#include <iostream>");
@@ -12,25 +24,28 @@ pub fn generate_code(ir: &IntRepSchema) {
         "  df_main.read(\"{file_name}\", io_format::csv2);",
         file_name = ir.from
     );
-    for (i, (source, _, _)) in ir.joins.iter().enumerate() {
+    for (i, join) in ir.joins.iter().enumerate() {
         println!("  SqlcDataFrame df_join{i};", i = i);
         println!(
             "  df_join{i}.read(\"{file_name}\", io_format::csv2);",
             i = i,
-            file_name = source
+            file_name = join.source
         );
     }
     print!("  SqlcDataFrame df = df_main");
     let distinct_col_types: HashSet<_> = ir.col_types.values().cloned().collect();
-    for (i, (_, join_policy, col)) in ir.joins.iter().enumerate() {
+    for (i, join) in ir.joins.iter().enumerate() {
         println!(".join_by_column");
         println!("    <");
         println!("      decltype(df_join{i}),", i = i);
-        print!("      {t}", t = ir.col_types.get(col).unwrap());
+        print!("      {t}", t = ir.col_types.get(&join.constraint).unwrap());
         for col_type in &distinct_col_types {
             print!(",\n      {col_type}");
         }
-        println!("\n    >(df_join{i}, \"{col}\", hmdf::join_policy::{join_policy}_join);");
+        println!(
+            "\n    >(df_join{i}, \"{0}\", hmdf::join_policy::{1});",
+            join.constraint, join.operator
+        );
     }
     print!("  auto where_functor = [](const idx_t&");
     for col in ir.filter_cols.iter() {
