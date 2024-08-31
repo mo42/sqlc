@@ -1,4 +1,5 @@
 use crate::intermediate as int;
+
 use sqlparser::ast::*;
 
 pub trait Visitor {
@@ -96,7 +97,17 @@ impl Visitor for SqlVisitor {
         match select_item {
             SelectItem::UnnamedExpr(expr) => {
                 let col = self.visit_expr(&expr).unwrap().clone();
-                self.ir.selection.push(col);
+                self.ir.selection.push(int::SelectItem::Unnamed(col));
+            }
+
+            SelectItem::ExprWithAlias { expr, alias } => {
+                let col = self.visit_expr(&expr).unwrap().clone();
+                let a = self.visit_ident(&alias).unwrap().clone();
+                let r = int::SelectItem::WithAlias(int::WithAlias {
+                    expr: col,
+                    alias: a,
+                });
+                self.ir.selection.push(r);
             }
             _ => {}
         }

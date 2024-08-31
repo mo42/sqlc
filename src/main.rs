@@ -24,7 +24,6 @@ fn main() {
             Ok(read_file) => {
                 let dialect = GenericDialect {};
                 let ast = Parser::parse_sql(&dialect, &read_file).unwrap();
-
                 let mut visitor = SqlVisitor::new();
                 for statement in ast {
                     traverse_ast(&mut visitor, &statement);
