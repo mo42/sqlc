@@ -73,3 +73,14 @@ int main(int, char**) {
   return 0;
 }
 ```
+
+## Documentation
+
+Order of execution of SQL statements:
+1. `FROM` and `JOIN`
+2. `WHERE`
+3. `GROUP BY`
+4. `HAVING`
+5. `SELECT` (`2 * col1 AS col_new1` and window functions)
+6. `ORDER BY`
+7. `LIMIT`

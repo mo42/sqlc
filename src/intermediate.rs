@@ -25,16 +25,19 @@ fn read_csv_columns(file_path: &str) -> Result<HashMap<String, String>> {
     Ok(col_types)
 }
 
+#[derive(Debug)]
 pub enum OrderDirection {
     Ascending,
     Descending,
 }
 
+#[derive(Debug)]
 pub struct ColumnOrder {
     pub column: String,
     pub direction: OrderDirection,
 }
 
+#[derive(Debug)]
 pub enum JoinOperator {
     Inner,
     Left,
@@ -47,9 +50,21 @@ pub struct Join {
     pub constraint: String,
 }
 
+#[derive(Debug)]
+pub struct WithAlias {
+    pub expr: String,
+    pub alias: String,
+}
+
+#[derive(Debug)]
+pub enum SelectItem {
+    Unnamed(String),
+    WithAlias(WithAlias),
+}
+
 pub struct IntRep {
     pub from: Option<String>,
-    pub selection: Vec<String>,
+    pub selection: Vec<SelectItem>,
     pub filter: Vec<String>,
     pub filter_cols: HashSet<String>,
     pub joins: Vec<Join>,
@@ -71,7 +86,7 @@ impl IntRep {
 
 pub struct IntRepSchema {
     pub from: String,
-    pub selection: Vec<String>,
+    pub selection: Vec<SelectItem>,
     pub filter: Vec<String>,
     pub filter_cols: HashSet<String>,
     pub joins: Vec<Join>,
@@ -86,6 +101,18 @@ impl IntRepSchema {
         let mut col_types = read_csv_columns(from).unwrap();
         for join in &ir.joins {
             col_types.extend(read_csv_columns(&join.source).unwrap());
+        }
+        for select_item in &ir.selection {
+            match select_item {
+                SelectItem::WithAlias(wa) => {
+                    // TODO correctly infer column type
+                    col_types.insert(
+                        wa.alias.clone(),
+                        col_types.get(&wa.expr).unwrap().to_string(),
+                    );
+                }
+                _ => {}
+            }
         }
         let idx_type = col_types.get("INDEX").unwrap().to_string();
         IntRepSchema {

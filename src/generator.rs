@@ -14,11 +14,13 @@ impl fmt::Display for JoinOperator {
 }
 
 pub fn generate_code(ir: &IntRepSchema) {
+    // HEADER
     println!("#include <DataFrame/DataFrame.h>\n\n#include <iostream>");
     println!("using namespace hmdf;");
     println!("typedef {idx_t} idx_t;", idx_t = ir.index_type);
     println!("using SqlcDataFrame = StdDataFrame<idx_t>;");
     println!("int main(int, char**) {{");
+    // FROM and JOIN
     println!("  SqlcDataFrame df_main;");
     println!(
         "  df_main.read(\"{file_name}\", io_format::csv2);",
@@ -47,6 +49,7 @@ pub fn generate_code(ir: &IntRepSchema) {
             join.constraint, join.operator
         );
     }
+    // WHERE
     print!("  auto where_functor = [](const idx_t&");
     for col in ir.filter_cols.iter() {
         print!(
@@ -77,10 +80,50 @@ pub fn generate_code(ir: &IntRepSchema) {
     }
     println!("where_functor);");
 
+    // SELECT
+    println!("  std::vector<idx_t> idx = where_df.get_index();");
+    for select_item in ir.selection.iter() {
+        match select_item {
+            SelectItem::Unnamed(s) => {
+                println!(
+                    "  std::vector<{col_t}> {col} = where_df.get_column<{col_t}> (\"{col}\");",
+                    col_t = ir.col_types.get(s).unwrap(),
+                    col = s
+                );
+            }
+            SelectItem::WithAlias(wa) => {
+                println!(
+                    "  std::vector<{col_t}> {alias} = where_df.get_column<{col_t}> (\"{col}\");",
+                    col_t = ir.col_types.get(&wa.alias).unwrap(),
+                    col = wa.expr,
+                    alias = wa.alias,
+                );
+            }
+        }
+    }
+    println!("  SqlcDataFrame select;");
+    println!("  select.load_index(std::move(idx));");
+    for select_item in ir.selection.iter() {
+        match select_item {
+            SelectItem::Unnamed(s) => {
+                println!(
+                    "  select.load_column(\"{col}\", std::move({col}));",
+                    col = s
+                );
+            }
+            SelectItem::WithAlias(wa) => {
+                println!(
+                    "  select.load_column(\"{col}\", std::move({col}));",
+                    col = wa.alias
+                );
+            }
+        }
+    }
+
     // ORDER BY
 
     if ir.order_by.len() > 0 {
-        print!("  where_df.sort<");
+        print!("  select.sort<");
         for ob in &ir.order_by {
             print!("{}, ", ir.col_types.get(&ob.column).unwrap());
         }
@@ -104,26 +147,18 @@ pub fn generate_code(ir: &IntRepSchema) {
 
     // END ORDER BY
 
-    println!("  std::vector<idx_t> idx = where_df.get_index();");
-    for col in ir.selection.iter() {
-        println!(
-            "  std::vector<{col_t}> {col} = where_df.get_column<{col_t}> (\"{col}\");",
-            col_t = ir.col_types.get(col).unwrap(),
-            col = col
-        );
-    }
-    println!("  SqlcDataFrame select;");
-    println!("  select.load_index(std::move(idx));");
-    for col in ir.selection.iter() {
-        println!(
-            "  select.load_column(\"{col}\", std::move({col}));",
-            col = col
-        );
-    }
     print!("  select.write<std::ostream");
     let mut distinct_select_col_t: HashSet<String> = HashSet::new();
-    for col in ir.selection.iter() {
-        distinct_select_col_t.insert(ir.col_types.get(col).unwrap().to_string());
+    for select_item in ir.selection.iter() {
+        match select_item {
+            SelectItem::Unnamed(s) => {
+                distinct_select_col_t.insert(ir.col_types.get(s).unwrap().to_string());
+            }
+            SelectItem::WithAlias(wa) => {
+                // TODO rename
+                distinct_select_col_t.insert(ir.col_types.get(&wa.alias).unwrap().to_string());
+            }
+        }
     }
     for col_t in distinct_select_col_t.iter() {
         print!(", {col_t}");
