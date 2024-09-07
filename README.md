@@ -13,8 +13,7 @@ Proof-of-concept for a compiler that translates SQL queries to type-checked C++ 
 
 ## Installation
 ```sh
-git clone https://github.com/mo42/sqlc.git
-cd sqlc
+git clone https://github.com/mo42/sqlc.git && cd sqlc
 cargo build --release
 ```
 
@@ -74,13 +73,15 @@ int main(int, char**) {
 }
 ```
 
-## Documentation
+# Documentation
 
 Order of execution of SQL statements:
-1. `FROM` and `JOIN`
-2. `WHERE`
-3. `GROUP BY`
-4. `HAVING`
-5. `SELECT` (`2 * col1 AS col_new1` and window functions)
-6. `ORDER BY`
-7. `LIMIT`
+
+1. FROM
+2. JOIN
+3. WHERE
+4. GROUP BY
+5. HAVING
+6. SELECT (column-wise computations like `2 * col1 AS twice`, window functions)
+7. ORDER BY
+8. LIMIT
