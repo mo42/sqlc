@@ -11,3 +11,5 @@ and this project adheres to the
 ### 0.0.1 - DATE
 
 - POC: support selection and projection
+- POC: support joins and ordering
+- POC: support prepare aliasing and limit command
