@@ -69,6 +69,7 @@ pub struct IntRep {
     pub filter_cols: HashSet<String>,
     pub joins: Vec<Join>,
     pub order_by: Vec<ColumnOrder>,
+    pub limit: Option<String>,
 }
 
 impl IntRep {
@@ -80,6 +81,7 @@ impl IntRep {
             filter_cols: HashSet::new(),
             joins: Vec::new(),
             order_by: Vec::new(),
+            limit: None,
         }
     }
 }
@@ -91,6 +93,7 @@ pub struct IntRepSchema {
     pub filter_cols: HashSet<String>,
     pub joins: Vec<Join>,
     pub order_by: Vec<ColumnOrder>,
+    pub limit: Option<String>,
     pub index_type: String,
     pub col_types: HashMap<String, String>,
 }
@@ -122,6 +125,7 @@ impl IntRepSchema {
             filter_cols: ir.filter_cols,
             joins: ir.joins,
             order_by: ir.order_by,
+            limit: ir.limit,
             index_type: idx_type,
             col_types: col_types,
         }
