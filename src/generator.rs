@@ -145,9 +145,6 @@ pub fn generate_code(ir: &IntRepSchema) {
         print!(">({});\n", order_by);
     }
 
-    // END ORDER BY
-
-    print!("  select.write<std::ostream");
     let mut distinct_select_col_t: HashSet<String> = HashSet::new();
     for select_item in ir.selection.iter() {
         match select_item {
@@ -160,6 +157,22 @@ pub fn generate_code(ir: &IntRepSchema) {
             }
         }
     }
+    // LIMIT
+    if let Some(limit) = &ir.limit {
+        println!(
+            "  auto limited = select.get_top_n_data<{ts}>(\"INDEX\", {limit});",
+            ts = distinct_select_col_t
+                .iter()
+                .cloned()
+                .collect::<Vec<String>>()
+                .join(", "),
+            limit = limit
+        );
+    } else {
+        println!("  auto limited = select;");
+    }
+
+    print!("  limited.write<std::ostream");
     for col_t in distinct_select_col_t.iter() {
         print!(", {col_t}");
     }

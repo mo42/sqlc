@@ -7,3 +7,4 @@ FROM
 WHERE
   joined_string = "Join string 3"
 ORDER BY date_alias ASC, column2 DESC
+LIMIT 2

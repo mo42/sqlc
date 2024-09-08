@@ -58,6 +58,11 @@ impl Visitor for SqlVisitor {
                 },
             });
         }
+        if let Some(limit) = &query.limit {
+            self.ir.limit = self.visit_expr(&limit);
+        } else {
+            self.ir.limit = None
+        }
     }
 
     fn visit_body(&mut self, body: &SetExpr) {
@@ -118,6 +123,12 @@ impl Visitor for SqlVisitor {
             Expr::Identifier(ident) => {
                 return self.visit_ident(&ident);
             }
+            Expr::Value(value) => match value {
+                Value::Number(n, _) => {
+                    return Some(n.to_string());
+                }
+                _ => None,
+            },
             _ => None,
         }
     }
