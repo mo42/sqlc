@@ -29,7 +29,7 @@ fn main() {
                     traverse_ast(&mut visitor, &statement);
                 }
                 let irs = IntRepSchema::new(visitor.ir);
-                generate_code(&irs);
+                print!("{}", generate_code(&irs));
             }
             Err(error) => {
                 eprintln!("Error reading file {}: {}", &args[1], error);
