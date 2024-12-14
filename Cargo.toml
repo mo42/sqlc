@@ -8,9 +8,8 @@ description = "Compile SQL to C++"
 
 [dependencies]
 pre-commit-hooks = "0.3"
-logos = "0.14.0"
 csv = "1.3"
-sqlparser = "0.46.0"
+sqlparser = "0.52.0"
 
 [package.metadata.precommit]
 fmt = "cargo fmt"
