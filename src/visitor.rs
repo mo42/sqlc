@@ -5,7 +5,7 @@ use sqlparser::ast::*;
 pub trait Visitor {
     fn visit_statement(&mut self, statement: &Statement);
     fn visit_body(&mut self, body: &SetExpr);
-    fn visit_order_by(&mut self, order_by: &OrderByExpr) -> (String, bool);
+    fn visit_order_by_expr(&mut self, order_by: &OrderByExpr) -> (String, bool);
     fn visit_select(&mut self, select: &Select);
     fn visit_select_item(&mut self, select_item: &SelectItem);
     fn visit_table_with_joins(&mut self, table_with_joins: &TableWithJoins);
@@ -47,16 +47,18 @@ impl Visitor for SqlVisitor {
 
     fn visit_query(&mut self, query: &Query) {
         self.visit_body(&query.body);
-        for order_by in query.order_by.iter() {
-            let (col, asc) = self.visit_order_by(&order_by);
-            self.ir.order_by.push(int::ColumnOrder {
-                column: col,
-                direction: if asc {
-                    int::OrderDirection::Ascending
-                } else {
-                    int::OrderDirection::Descending
-                },
-            });
+        if let Some(order_by_exprs) = &query.order_by {
+            for expr in order_by_exprs.exprs.iter() {
+                let (col, asc) = self.visit_order_by_expr(&expr);
+                self.ir.order_by.push(int::ColumnOrder {
+                    column: col,
+                    direction: if asc {
+                        int::OrderDirection::Ascending
+                    } else {
+                        int::OrderDirection::Descending
+                    },
+                });
+            }
         }
         if let Some(limit) = &query.limit {
             self.ir.limit = self.visit_expr(&limit);
@@ -74,7 +76,7 @@ impl Visitor for SqlVisitor {
         }
     }
 
-    fn visit_order_by(&mut self, order_by: &OrderByExpr) -> (String, bool) {
+    fn visit_order_by_expr(&mut self, order_by: &OrderByExpr) -> (String, bool) {
         let col = self.visit_expr(&order_by.expr).unwrap().clone();
         if let Some(asc) = order_by.asc {
             return (col, asc);
