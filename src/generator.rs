@@ -27,66 +27,60 @@ pub fn generate_code(ir: &IntRepSchema) -> String {
     // HEADER
     format_push!(
         code,
-        "#include <DataFrame/DataFrame.h>\n\n#include <iostream>"
+        "#include <DataFrame/DataFrame.h>\n#include <iostream>"
     );
     format_push!(code, "using namespace hmdf;");
     format_push!(code, "typedef {} idx_t;", ir.index_type);
     format_push!(code, "using SqlcDataFrame = StdDataFrame<idx_t>;");
     format_push!(code, "int main(int, char**) {{");
     // FROM and JOIN
-    format_push!(code, "  SqlcDataFrame df_main;");
-    format_push!(code, "  df_main.read(\"{}\", io_format::csv2);", ir.from);
+    format_push!(code, "SqlcDataFrame df_main;");
+    format_push!(code, "df_main.read(\"{}\", io_format::csv2);", ir.from);
     for (i, join) in ir.joins.iter().enumerate() {
-        format_push!(code, "  SqlcDataFrame df_join{};", i);
+        format_push!(code, "SqlcDataFrame df_join{};", i);
         format_push!(
             code,
-            "  df_join{}.read(\"{}\", io_format::csv2);",
+            "df_join{}.read(\"{}\", io_format::csv2);",
             i,
             join.source
         );
     }
-    format_push!(code, "  SqlcDataFrame df = df_main");
+    format_push!(code, "SqlcDataFrame df = df_main");
     let distinct_col_types: HashSet<_> = ir.col_types.values().cloned().collect();
     for (i, join) in ir.joins.iter().enumerate() {
         format_push!(code, ".join_by_column");
-        format_push!(code, "    <");
-        format_push!(code, "      decltype(df_join{}),", i);
-        format_push!(
-            code,
-            "      {}",
-            ir.col_types.get(&join.constraint).unwrap()
-        );
+        format_push!(code, "<decltype(df_join{})", i);
+        format_push!(code, ",{}", ir.col_types.get(&join.constraint).unwrap());
         for col_type in &distinct_col_types {
-            format_push!(code, ",\n      {}", col_type);
+            format_push!(code, ",{}", col_type);
         }
         format_push!(
             code,
-            "\n    >(df_join{}, \"{}\", hmdf::join_policy::{});",
+            ">(df_join{}, \"{}\", hmdf::join_policy::{});",
             i,
             join.constraint,
             join.operator
         );
     }
     // WHERE
-    format_push!(code, "  auto where_functor = [](const idx_t&");
+    format_push!(code, "auto where_functor = [](const idx_t&");
     for col in ir.filter_cols.iter() {
         format_push!(code, ", const {} &{}", ir.col_types.get(col).unwrap(), col);
     }
     format_push!(code, ") -> bool {{");
-    format_push!(code, "    return ");
+    format_push!(code, "return");
     for filter_token in ir.filter.iter() {
         format_push!(code, "{}", filter_token);
     }
     format_push!(code, ";");
-    format_push!(code, "  }};");
-    format_push!(code, "  auto where_df =");
-    format_push!(code, "    df.get_data_by_sel<");
+    format_push!(code, "}};");
+    format_push!(code, "auto where_df = df.get_data_by_sel<");
     for col in ir.filter_cols.iter() {
         format_push!(code, "{}, ", ir.col_types.get(col).unwrap());
     }
     format_push!(code, "decltype(where_functor)");
     for col_type in &distinct_col_types {
-        format_push!(code, ", {}", col_type);
+        format_push!(code, ",{}", col_type);
     }
     format_push!(code, ">(");
     for col in ir.filter_cols.iter() {
@@ -95,13 +89,13 @@ pub fn generate_code(ir: &IntRepSchema) -> String {
     format_push!(code, "where_functor);");
 
     // SELECT
-    format_push!(code, "  std::vector<idx_t> idx = where_df.get_index();");
+    format_push!(code, "std::vector<idx_t> idx = where_df.get_index();");
     for select_item in ir.selection.iter() {
         match select_item {
             SelectItem::Unnamed(s) => {
                 format_push!(
                     code,
-                    "  std::vector<{}> {} = where_df.get_column<{}> (\"{}\");",
+                    "std::vector<{}> {} = where_df.get_column<{}> (\"{}\");",
                     ir.col_types.get(s).unwrap(),
                     s,
                     ir.col_types.get(s).unwrap(),
@@ -111,7 +105,7 @@ pub fn generate_code(ir: &IntRepSchema) -> String {
             SelectItem::WithAlias(wa) => {
                 format_push!(
                     code,
-                    "  std::vector<{}> {} = where_df.get_column<{}> (\"{}\");",
+                    "std::vector<{}> {} = where_df.get_column<{}> (\"{}\");",
                     ir.col_types.get(&wa.alias).unwrap(),
                     wa.alias,
                     ir.col_types.get(&wa.alias).unwrap(),
@@ -120,17 +114,17 @@ pub fn generate_code(ir: &IntRepSchema) -> String {
             }
         }
     }
-    format_push!(code, "  SqlcDataFrame select;");
-    format_push!(code, "  select.load_index(std::move(idx));");
+    format_push!(code, "SqlcDataFrame select;");
+    format_push!(code, "select.load_index(std::move(idx));");
     for select_item in ir.selection.iter() {
         match select_item {
             SelectItem::Unnamed(s) => {
-                format_push!(code, "  select.load_column(\"{}\", std::move({}));", s, s);
+                format_push!(code, "select.load_column(\"{}\", std::move({}));", s, s);
             }
             SelectItem::WithAlias(wa) => {
                 format_push!(
                     code,
-                    "  select.load_column(\"{}\", std::move({}));",
+                    "select.load_column(\"{}\", std::move({}));",
                     wa.alias,
                     wa.alias
                 );
@@ -141,7 +135,7 @@ pub fn generate_code(ir: &IntRepSchema) -> String {
     // ORDER BY
 
     if ir.order_by.len() > 0 {
-        format_push!(code, "  select.sort<");
+        format_push!(code, "select.sort<");
         for ob in &ir.order_by {
             format_push!(code, "{}, ", ir.col_types.get(&ob.column).unwrap());
         }
@@ -188,10 +182,10 @@ pub fn generate_code(ir: &IntRepSchema) -> String {
             limit
         );
     } else {
-        format_push!(code, "  auto limited = select;");
+        format_push!(code, "auto limited = select;");
     }
 
-    format_push!(code, "  limited.write<std::ostream");
+    format_push!(code, "limited.write<std::ostream");
     for col_t in distinct_select_col_t.iter() {
         format_push!(code, ", {}", col_t);
     }
