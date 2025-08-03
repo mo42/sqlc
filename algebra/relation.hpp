@@ -1,5 +1,6 @@
 #pragma once
 #include "types.hpp"
+#include <stdexcept>
 #include <algorithm>
 #include <string>
 #include <unordered_map>

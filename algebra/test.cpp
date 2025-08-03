@@ -10,4 +10,6 @@ int main() {
   Relation rr = select(r, [](const std::vector<Value>& row) {
     return std::get<int64_t>(row[0]) > 100;
   });
+  Relation rrr = rename(rr, {{"d", "dd"}});
+  Relation rrrr = project(rrr, {"a", "b"});
 }
