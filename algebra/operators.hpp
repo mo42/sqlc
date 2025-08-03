@@ -1,7 +1,7 @@
 #pragma once
 #include "relation.hpp"
-#include <stdexcept>
 #include <functional>
+#include <stdexcept>
 
 namespace algebra {
 
@@ -45,7 +45,8 @@ Relation project(const Relation& r, const std::vector<std::string>& cols) {
   return result;
 }
 
-Relation rename(const Relation& r, const std::unordered_map<std::string, std::string>& renames) {
+Relation rename(const Relation& r,
+                const std::unordered_map<std::string, std::string>& renames) {
   Relation result = r;
   for (size_t i = 0; i < result.column_names.size(); ++i) {
     const auto& old_name = result.column_names[i];
