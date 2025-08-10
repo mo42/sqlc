@@ -11,4 +11,4 @@ fi
 
 cargo run -- $1 > $(basename -s sql $1)cpp
 clang-format -i $(basename -s sql $1)cpp
-clang -lstdc++ -lm -std=c++23 -o $(basename -s .sql $1) -Idf/include $(basename -s sql $1)cpp df/lib64/libDataFrame.a
+clang -lstdc++ -lm -std=c++23 -o $(basename -s .sql $1) $(basename -s sql $1)cpp
