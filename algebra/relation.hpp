@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace algebra {
@@ -15,7 +15,7 @@ class Relation {
 public:
   using Column = std::vector<Value>;
 
-  std::vector<std::string> column_names;
+  std::map<std::string, size_t> column_names;
   std::vector<Column> columns;
 
   Relation() = default;
@@ -44,19 +44,28 @@ public:
     size_t num_columns = column_names.size();
     size_t num_rows = rows();
 
+    // Create a vector of (index, name) pairs sorted by index
+    std::vector<std::pair<int, std::string>> index_to_name;
+    index_to_name.reserve(num_columns);
+    for (const auto& [name, idx] : column_names) {
+      index_to_name.emplace_back(idx, name);
+    }
+    std::sort(index_to_name.begin(), index_to_name.end(),
+              [](const auto& a, const auto& b) { return a.first < b.first; });
+
     // Determine column widths
     std::vector<size_t> widths(num_columns);
-    for (size_t i = 0; i < num_columns; ++i) {
-      widths[i] = column_names[i].size();
-      for (const auto& val : columns[i]) {
+    for (const auto& [idx, name] : index_to_name) {
+      widths[idx] = name.size();
+      for (const auto& val : columns[idx]) {
         std::string str = to_string(val);
-        widths[i] = std::max(widths[i], str.size());
+        widths[idx] = std::max(widths[idx], str.size());
       }
     }
 
     // Print column headers
     for (size_t i = 0; i < num_columns; ++i) {
-      os << std::left << std::setw(widths[i]) << column_names[i];
+      os << std::left << std::setw(widths[i]) << index_to_name[i].second;
       if (i != num_columns - 1)
         os << " | ";
     }
@@ -71,7 +80,9 @@ public:
     // Print rows
     for (size_t r = 0; r < num_rows; ++r) {
       for (size_t c = 0; c < num_columns; ++c) {
-        os << std::left << std::setw(widths[c]) << to_string(columns[c][r]);
+        int col_index = index_to_name[c].first;
+        os << std::left << std::setw(widths[col_index])
+           << to_string(columns[col_index][r]);
         if (c != num_columns - 1)
           os << " | ";
       }

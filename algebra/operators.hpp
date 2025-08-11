@@ -30,12 +30,12 @@ Relation project(const Relation& r, const std::vector<std::string>& cols) {
   std::vector<size_t> indices;
 
   for (const auto& col : cols) {
-    auto it = std::find(r.column_names.begin(), r.column_names.end(), col);
+    auto it = r.column_names.find(col);
     if (it == r.column_names.end()) {
       throw std::runtime_error("Column not found in projection: " + col);
     }
-    indices.push_back(std::distance(r.column_names.begin(), it));
-    result.column_names.push_back(col);
+    indices.push_back(it->second);
+    result.column_names[col] = static_cast<size_t>(result.column_names.size());
   }
 
   for (size_t idx : indices) {
@@ -47,14 +47,19 @@ Relation project(const Relation& r, const std::vector<std::string>& cols) {
 
 Relation rename(const Relation& r,
                 const std::unordered_map<std::string, std::string>& renames) {
-  Relation result = r;
-  for (size_t i = 0; i < result.column_names.size(); ++i) {
-    const auto& old_name = result.column_names[i];
+  Relation result;
+  result.columns = r.columns;
+
+  // Rebuild column_names map with renamed keys
+  for (const auto& [old_name, idx] : r.column_names) {
     auto it = renames.find(old_name);
     if (it != renames.end()) {
-      result.column_names[i] = it->second;
+      result.column_names[it->second] = idx;
+    } else {
+      result.column_names[old_name] = idx;
     }
   }
+
   return result;
 }
 
