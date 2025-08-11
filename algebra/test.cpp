@@ -8,8 +8,8 @@ int main() {
   Relation r = load_csv("data.csv");
   std::cout << std::endl << "Relation r:" << std::endl;
   r.print();
-  Relation rr = select(r, [](const std::vector<Value>& row) {
-    return std::get<int64_t>(row[0]) >= 100;
+  Relation rr = select(r, [r](const std::vector<Value>& row) {
+    return col<int64_t>(r, row, "a") >= 100;
   });
   std::cout << std::endl << "Relation rr:" << std::endl;
   rr.print();
