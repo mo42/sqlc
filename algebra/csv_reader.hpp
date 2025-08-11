@@ -16,8 +16,10 @@ Relation load_csv(const std::string& filename, char delimiter = ',') {
 
   std::stringstream ss(line);
   std::string col;
-  while (std::getline(ss, col, delimiter))
-    rel.column_names.push_back(col);
+  size_t i = 0;
+  while (std::getline(ss, col, delimiter)) {
+    rel.column_names[col] = i++;
+  }
 
   size_t ncols = rel.column_names.size();
   std::vector<Relation::Column> cols(ncols);
