@@ -5,6 +5,12 @@
 
 namespace algebra {
 
+template <typename T>
+inline T col(const Relation& r, const std::vector<Value>& row,
+             const std::string& name) {
+  return std::get<T>(row[r.column_names.at(name)]);
+}
+
 Relation select(const Relation& r,
                 std::function<bool(const std::vector<Value>&)> predicate) {
   Relation result;
