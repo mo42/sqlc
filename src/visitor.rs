@@ -222,8 +222,10 @@ impl Visitor for SqlVisitor {
                     let quoted = format!("\"{}\"", id);
                     return [quoted].to_vec();
                 } else {
-                    self.ir.filter_cols.insert(id.clone());
-                    return [id.clone()].to_vec();
+                    let col = id.clone();
+                    let cpp_get = format!("col<std::string>(rel_main, row, \"{}\")", col);
+                    self.ir.filter_cols.insert(col);
+                    return [cpp_get].to_vec();
                 }
             }
             Expr::Value(val) => {

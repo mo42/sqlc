@@ -21,6 +21,14 @@ pub fn generate_code(ir: &IntRepSchema) -> String {
     format_push!(code, "int main() {{");
     // Load first from
     format_push!(code, "Relation rel_main = load_csv(\"{}\");", ir.from);
+    format_push!(
+        code,
+        "Relation selected = select(rel_main, [rel_main](const std::vector<Value>& row) {{ return "
+    );
+    for filter_token in ir.filter.iter() {
+        format_push!(code, "{}", filter_token);
+    }
+    format_push!(code, ";}});");
     format_push!(code, "}}");
     return code.join("\n");
 }
