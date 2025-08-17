@@ -28,8 +28,10 @@ Relation load_csv(const std::string& filename, char delimiter = ',') {
     std::stringstream rowss(line);
     std::string cell;
     for (size_t i = 0; i < ncols; ++i) {
-      if (!std::getline(rowss, cell, delimiter))
+      if (!std::getline(rowss, cell, delimiter)) {
         break;
+      }
+      /* TODO All column types are std::string
       if (cell == "true" || cell == "false")
         cols[i].emplace_back(cell == "true");
       else if (cell.find('.') != std::string::npos)
@@ -41,6 +43,8 @@ Relation load_csv(const std::string& filename, char delimiter = ',') {
           cols[i].emplace_back(cell);
         }
       }
+      */
+      cols[i].emplace_back(cell);
     }
   }
 
