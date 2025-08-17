@@ -69,4 +69,15 @@ Relation rename(const Relation& r,
   return result;
 }
 
+Relation limit(const Relation& rel, size_t n) {
+    Relation result;
+    result.column_names = rel.column_names;
+    size_t rows_to_keep = std::min(n, rel.rows());
+    result.columns.reserve(rel.columns.size());
+    for (const auto& col : rel.columns) {
+        result.columns.emplace_back(col.begin(), col.begin() + rows_to_keep);
+    }
+    return result;
+}
+
 } // namespace algebra
