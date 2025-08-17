@@ -29,6 +29,13 @@ pub fn generate_code(ir: &IntRepSchema) -> String {
         format_push!(code, "{}", filter_token);
     }
     format_push!(code, ";}});");
+
+    if let Some(limit) = &ir.limit {
+        format_push!(code, "Relation limited = limit(selected, {});", limit);
+    } else {
+        format_push!(code, "Relation limited = selected;");
+    }
+
     format_push!(code, "}}");
     return code.join("\n");
 }
