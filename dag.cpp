@@ -1,4 +1,5 @@
 #include <duckdb.hpp>
+#include <duckdb/parser/parser.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -40,15 +41,14 @@ static void replace_all(std::string &str,
 bool compile_sql_to_cpp(const fs::path &sql_path) {
     std::string raw_sql = read_file(sql_path);
 
-    {
-        duckdb::DuckDB db(nullptr);
-        duckdb::Connection con(db);
-        auto prep = con.Prepare(raw_sql);
-        if (!prep->success) {
-            std::cerr << "SQL syntax error in " << sql_path << "\n"
-                      << prep->GetError() << "\n";
-            return false;
-        }
+    // SYNTAX-ONLY validation (no file access)
+    try {
+        duckdb::Parser parser;
+        parser.ParseQuery(raw_sql);
+    } catch (const std::exception &e) {
+        std::cerr << "SQL parse error in " << sql_path << ":\n"
+                  << e.what() << "\n";
+        return false;
     }
 
     std::string output_cpp = replace_extension(sql_path.string(), ".cpp");
