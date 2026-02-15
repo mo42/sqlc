@@ -1,15 +1,13 @@
-# Changelog for `sqlc`
+# Changelog for `dag`
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to the
-[Haskell Package Versioning Policy](https://pvp.haskell.org/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Init
+## [Unreleased]
 
 ### 0.0.1 - DATE
 
-- POC: support selection and projection
-- POC: support joins and ordering
-- POC: support prepare aliasing and limit command
+- dag command with compile and run
+- dag analyzes DAG and can compile and execute dependant SQL files
